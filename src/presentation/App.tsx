@@ -1,34 +1,51 @@
-import { useState } from 'react'
-import reactLogo from '../assets/react.svg'
-import viteLogo from '/vite.svg'
-import '../App.css'
+import { useEffect, useState } from 'react'
+import { BrowserRouter, Link, Route, Routes } from 'react-router-dom'
+import { Layout, Menu } from 'antd'
+import { makeLoginModule } from '../main/factories/modules'
+import { makeLoadMenu } from '../main/factories/usecase'
+import type { MenuItem } from '../data/models'
+
+const { Header, Content } = Layout
+
+const moduleMap: Record<string, JSX.Element> = {
+  login: makeLoginModule(),
+}
+
+const loadMenuUseCase = makeLoadMenu()
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [menu, setMenu] = useState<MenuItem[]>([])
+
+  useEffect(() => {
+    loadMenuUseCase.execute().then(setMenu).catch(console.error)
+  }, [])
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/presentation/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <BrowserRouter>
+      <Layout style={{ minHeight: '100vh' }}>
+        <Header>
+          <Menu theme="dark" mode="horizontal">
+            {menu.map((item) => (
+              <Menu.Item key={item.path}>
+                <Link to={item.path}>{item.label}</Link>
+              </Menu.Item>
+            ))}
+          </Menu>
+        </Header>
+        <Content style={{ padding: 24 }}>
+          <Routes>
+            <Route path="/" element={makeLoginModule()} />
+            {menu.map((item) => (
+              <Route
+                key={item.path}
+                path={item.path}
+                element={moduleMap[item.module] ?? <div>Module not found</div>}
+              />
+            ))}
+          </Routes>
+        </Content>
+      </Layout>
+    </BrowserRouter>
   )
 }
 
